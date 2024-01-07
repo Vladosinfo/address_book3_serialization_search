@@ -1,7 +1,15 @@
 from collections import UserDict
 from time import strptime
 from datetime import date, datetime
-import address_book_lib
+import pickle
+from pathlib import Path
+
+
+class NotCorrectData(Exception):
+    pass
+
+class NotCorrectPhone(Exception):
+    pass
 
 class Field:
     def __init__(self, value):
@@ -50,7 +58,7 @@ class Phone(Field):
         if phone.isdigit() and len(phone) == 10:
             self._value = phone
         else:
-            raise ValueError
+            raise NotCorrectPhone
 
     def validate(self, phone):
         if phone.isdigit() and len(phone) == 10:
@@ -76,7 +84,7 @@ class Birthday(Field):
                 strptime(value, '%d-%m-%Y')
                 self._value = value
             except ValueError:
-                raise ValueError
+                raise NotCorrectData
 
 class Record():
     def __init__(self, name, date=None):
@@ -123,9 +131,10 @@ class Record():
 
 class AddressBook(UserDict):
     def __init__(self):
-        self.list_items = []
+        # self.list_items = []
         self.list_count = 0
         self.data = {}
+        self.__abook_file = "book_file.bin"
 
     def add_record(self, value):
         # self.data[value.name.value] = value.phones
@@ -136,23 +145,47 @@ class AddressBook(UserDict):
             record = Record(name)
             record.phones = self.data[name]
             return self.data.get(name)
+        else:
+            return None
 
     def delete(self, name):
         if name in self.data.keys():
             self.data.pop(name)
 
     def list_creator(self):
+        self.list_items = []
         for item in self.data.values():
             self.list_items.append(item)
 
         self.list_count = len(self.list_items)
 
-
     def iterator(self, from_el=0, to_el=2):
-        if from_el < self.list_count:
+        if self.list_count > 0 and from_el < self.list_count:
             return (x for x in self.list_items[from_el:to_el])
-        raise StopIteration    
 
+    def serialization(self):
+        with open(self.__abook_file, "wb") as fh:
+            pickle.dump(self.data, fh)
+
+    def check_file_exist(self):
+        return Path(self.__abook_file).exists()
+
+    def unserialization(self):
+        if self.check_file_exist():
+            with open(self.__abook_file, "rb") as fh:
+                self.data = pickle.load(fh)
+            return self.data
+
+    def search(self, str):
+        searched_items = {}
+        for val, key in self.data.items():
+            if val.find(str) != -1:
+                searched_items.update({val: key})
+                continue
+            for phone in key.phones:
+                if phone.value.find(str) != -1:
+                    searched_items.update({val: key})
+        return searched_items if len(searched_items) > 0 else 0
 
 
 def main():
@@ -160,11 +193,11 @@ def main():
     john_record = Record("John", "12-03-1999")
     john_record.add_phone("0962455835")
     john_record.add_phone("7777777777")
+    abook.add_record(john_record)
 
     count_days_to_birthday = john_record.days_to_birthday()
     print(count_days_to_birthday)
 
-    abook.add_record(john_record)
 
     jane_record = Record("Jane")
     jane_record.add_phone("9876543210")
@@ -209,11 +242,12 @@ def main():
     print("-"*35) 
 
     john = abook.find("John")
-    john.edit_phone("0962455835", "1112223333")
-
-    found_phone = john.find_phone("1112223333")
-    found_phone = john.find_phone("0962455835")
-    print(f"{john.name}: {found_phone}") 
+    if john != None:
+        john.edit_phone("0962455835", "1112223333")
+        found_phone = john.find_phone("1112223333")
+        found_phone = john.find_phone("0962455835")
+        print(f"{john.name}: {found_phone}") 
+        john.edit_phone("7777777777", "7777777778")
 
     abook.delete("Jane")
 

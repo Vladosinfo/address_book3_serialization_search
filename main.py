@@ -1,4 +1,6 @@
-contacts_book = {}
+import address_book_lib as abl
+
+contacts_book = abl.AddressBook()
 
 MESSAGES = {
     "hello": "How can I help you?",
@@ -6,17 +8,25 @@ MESSAGES = {
     "close": "Good bye!",
     "exit": "Good bye!",
     "add": "Your contact has been added",
+    "add_more": "One more phone has been added",
     "change": "Your contact has been changed",
     "phone": "It's your phone number: ",
-    "show_all": "These are all contacts:"
+    "show_all": "These are all contacts:",
+    "show_found": "These are found contacts:",
+    "delete": "Item has been deleted",
+    "iter": "These are part of contacts"
 }
 EXIT_COMMANDS = ["good bye", "close", "exit"]
 WARNING_MESSAGES = {
     "correct_command": "Enter correct command",
     "name": "Enter user name",
     "name_phone": "Give me name and phone please",
+    "not_correct_phone": "Not correct phone",
     "missing_name": "This name is missing in contact book",
-    "contacts_book_empty": "Contacts book is empty yet."
+    "contacts_book_empty": "Contacts book is empty yet.",
+    "iter_no_result": "There are no records in this",
+    "show_found_empty": "Search did not return any results.",
+    "not_correct_data": "Not correct data."
 }
 RED = "\033[91m"
 GREEN = "\033[92m"
@@ -43,6 +53,10 @@ def input_error(func):
             return message_warging(f"Error: {err}")
         except IndexError as err:
             return message_warging(f"Error: {err}")
+        except abl.NotCorrectData as err:
+            return message_warging(f"Error: {WARNING_MESSAGES['not_correct_data']}")
+        except abl.NotCorrectPhone as err:
+            return message_warging(f"Error: {WARNING_MESSAGES['not_correct_phone']}")
     return wrapper
 
 
@@ -61,10 +75,24 @@ def error(err):
 
 @input_error
 def add(com):
-    if len(com) < 3:
-        raise ValueError(WARNING_MESSAGES["name_phone"])      
-    contacts_book[com[1]] = com[2]
-    return message_notice(MESSAGES[com[0]])
+    count = len(com)
+    if count < 3:
+        raise ValueError(WARNING_MESSAGES["name_phone"])  
+
+    record_is = contacts_book.find(com[1])
+    if record_is == None:
+        if count > 3:
+            record = abl.Record(com[1], com[2])
+            record.add_phone(com[3])
+        else:
+            record = abl.Record(com[1])
+            record.add_phone(com[2])
+        contacts_book.add_record(record)
+        return message_notice(MESSAGES[com[0]])
+    else:
+        record_is.add_phone(com[2])
+        contacts_book.add_record(record_is)
+        return message_notice(MESSAGES[com[0]+"_more"])
 
 
 def contacts_book_fullness():
@@ -75,19 +103,28 @@ def contacts_book_fullness():
 
 
 def presence_name(com):
-    if contacts_book.get(com[1]) == None:
+    contact = contacts_book.find(com[1])
+    if contact == None:
         return message_warging(WARNING_MESSAGES["missing_name"])
-    else: return True
+    else:
+        return contact
 
 
-def show_all(com):
-    cont = contacts_book_fullness()
-    if cont != 1: return cont
+def show_all(com, search=None):
+    if search != None:
+        iter_Item = search
+        message = "show_found"
+    else:
+        cont = contacts_book_fullness()
+        if cont != 1: return cont
+        
+        iter_Item = contacts_book
+        message = com
 
     contacts = ''
-    contacts += message_notice(MESSAGES[com])
-    for key, val in contacts_book.items():
-        contacts += '\n' + message_notice(f"Name: {key.capitalize()} | phone: {val}", BOLD)
+    contacts += message_notice(MESSAGES[message])
+    for val in iter_Item.values():
+        contacts += '\n' + message_notice(f"{val}", BOLD)
     return contacts
 
 
@@ -98,20 +135,67 @@ def phone(com):
 
     if len(com) < 2:
         raise ValueError(WARNING_MESSAGES["name"])
-    if presence_name(com): 
+    name_is = presence_name(com)
+    if name_is != None:
         return message_notice(f"{MESSAGES[com[0]]}{contacts_book[com[1]]}", BOLD)
 
 
 @input_error
 def change(com):
-    cont = contacts_book_fullness()
-    if cont != 1: return cont
-     
-    if len(com) < 3:
+    if len(com) < 4:
         raise ValueError(WARNING_MESSAGES["name_phone"])
-    if presence_name(com):
-        contacts_book[com[1]] = com[2]
+    name_is = presence_name(com)
+    if name_is != None:
+        name_is.edit_phone(com[2], com[3])
         return message_notice(MESSAGES[com[0]])
+
+
+@input_error
+def iter(com):
+    contacts_book.list_creator()
+    count = len(com)
+    if count == 3:
+        items = contacts_book.iterator(int(com[1]), int(com[2]))
+    else:
+        items = contacts_book.iterator()
+        
+    if items != None:
+        contacts = ''
+        contacts += message_notice(MESSAGES[com[0]])            
+        for item in items:
+            contacts += '\n' + message_notice(f"{item}", BOLD)
+        return contacts
+    else:
+        return message_warging(WARNING_MESSAGES["iter_no_result"])
+
+
+@input_error
+def delete(com):
+    res = contacts_book.find(com[1])
+    if res == None:
+        return message_warging(WARNING_MESSAGES["missing_name"])
+    else:
+        contacts_book.delete(com[1])
+        return message_warging(MESSAGES["delete"])
+
+    
+@input_error
+def search(com):
+    res = contacts_book.search(com[1])
+    if res != 0:
+        return show_all("show_all", res)
+    else:
+        return message_warging(WARNING_MESSAGES["show_found_empty"])
+
+
+@input_error
+def daysbir(com):
+    contact = contacts_book.find(com[1])
+    if contact == None:
+        return message_warging(WARNING_MESSAGES["missing_name"])
+    else:
+        res = contact.days_to_birthday()
+        return message_notice(f"{res}", BOLD)
 
 
 COMMAND_HANDLER = {
@@ -119,7 +203,11 @@ COMMAND_HANDLER = {
     "add": add,
     "change": change,
     "phone": phone,
-    "show all": show_all
+    "show all": show_all,
+    "iter": iter,
+    "search": search,
+    "delete": delete,
+    "daysbir": daysbir  # Count days to bithday
 }
 
 
@@ -136,11 +224,13 @@ def parsing(user_input):
 
 
 def main():
+    contacts_book.unserialization()
     while True:
         user_input = input("Input command >>> ")
         user_input = user_input.strip().lower()
         if user_input in EXIT_COMMANDS:
             print(exit(MESSAGES[user_input]))
+            contacts_book.serialization()
             break
         res = parsing(user_input)
         print(res)
