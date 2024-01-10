@@ -40,7 +40,7 @@ class Name(Field):
     
     @Field.value.setter
     def value(self, value):
-        self._value = value
+        self._value = value.title()
 
 
 class Phone(Field):
@@ -187,6 +187,8 @@ class AddressBook(UserDict):
                     searched_items.update({val: key})
         return searched_items if len(searched_items) > 0 else 0
 
+    def help(self):
+        return 
 
 def main():
     abook = AddressBook()

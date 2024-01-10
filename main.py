@@ -34,6 +34,20 @@ BOLD = '\033[1m'
 RESET = "\033[0m"
 
 
+COMMAND_HANDLER_DESCRIPTION = {
+    "hello": "Greeting",
+    "add": "Add new item to address book",
+    "change": "Change item",
+    "phone": "Find phone (item) by Name",
+    "show all": "Show_all items of address book",
+    "iter": "Show parn of items from .. to ... Sintax of command: >>>iter (show count items by defoult); item 1 5",
+    "search": "Search items by name or phone",
+    "delete": "Delete item",
+    "daysbir": "Count days to bithday",
+    "help": "List of commands"
+}
+
+
 def message_notice(notice, color = None):
     color = color or GREEN
     return f"{color} {notice} {RESET}"
@@ -197,6 +211,15 @@ def daysbir(com):
         res = contact.days_to_birthday()
         return message_notice(f"{res}", BOLD)
 
+@input_error
+def help(com):
+    res = ""
+    for command in COMMAND_HANDLER.keys():
+        # res += f"Command: {command}- description: {COMMAND_HANDLER_DESCRIPTION[command]}\n"
+        res += message_notice(f"Command: {command}", GREEN)
+        res += message_notice(f"- description: {COMMAND_HANDLER_DESCRIPTION[command]}\n", BOLD)
+    return res
+
 
 COMMAND_HANDLER = {
     "hello": message,
@@ -207,7 +230,8 @@ COMMAND_HANDLER = {
     "iter": iter,
     "search": search,
     "delete": delete,
-    "daysbir": daysbir  # Count days to bithday
+    "daysbir": daysbir,  # Count days to bithday
+    "help": help
 }
 
 
