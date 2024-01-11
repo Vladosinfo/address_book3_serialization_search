@@ -3,44 +3,45 @@ from time import strptime
 from datetime import date, datetime
 import pickle
 from pathlib import Path
+import classes.exceptions as ex
+from classes.field import Field
+from classes.name import Name
+# class NotCorrectData(Exception):
+#     pass
+
+# class NotCorrectPhone(Exception):
+#     pass
+
+# class Field:
+#     def __init__(self, value):
+#         self._value = None
+#         self.value = value
+
+#     @property
+#     def value(self):
+#         return self._value
+
+#     @value.setter
+#     def value(self, value):
+#         self._value = value
+
+#     def __str__(self) -> str:
+#         return str(self.value)
 
 
-class NotCorrectData(Exception):
-    pass
+# class Name(Field):
+#     def __init__(self, value):
+#         self._value = None
+#         self.value = value
+#         super().__init__(self._value)
 
-class NotCorrectPhone(Exception):
-    pass
-
-class Field:
-    def __init__(self, value):
-        self._value = None
-        self.value = value
-
-    @property
-    def value(self):
-        return self._value
-
-    @value.setter
-    def value(self, value):
-        self._value = value
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-
-class Name(Field):
-    def __init__(self, value):
-        self._value = None
-        self.value = value
-        super().__init__(self._value)
-
-    @property
-    def value(self):
-        return self.value
+#     @property
+#     def value(self):
+#         return self.value
     
-    @Field.value.setter
-    def value(self, value):
-        self._value = value.title()
+#     @Field.value.setter
+#     def value(self, value):
+#         self._value = value.title()
 
 
 class Phone(Field):
@@ -58,7 +59,7 @@ class Phone(Field):
         if phone.isdigit() and len(phone) == 10:
             self._value = phone
         else:
-            raise NotCorrectPhone
+            raise ex.NotCorrectPhone
 
     def validate(self, phone):
         if phone.isdigit() and len(phone) == 10:
@@ -84,7 +85,7 @@ class Birthday(Field):
                 strptime(value, '%d-%m-%Y')
                 self._value = value
             except ValueError:
-                raise NotCorrectData
+                raise ex.NotCorrectData
 
 class Record():
     def __init__(self, name, date=None):

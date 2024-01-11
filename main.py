@@ -1,52 +1,14 @@
 import address_book_lib as abl
+import messages_settings as message
+import classes.exceptions as ex
+from messages_settings import MESSAGES, EXIT_COMMANDS, WARNING_MESSAGES, COMMAND_HANDLER_DESCRIPTION
 
 contacts_book = abl.AddressBook()
 
-MESSAGES = {
-    "hello": "How can I help you?",
-    "good bye": "Good bye!",
-    "close": "Good bye!",
-    "exit": "Good bye!",
-    "add": "Your contact has been added",
-    "add_more": "One more phone has been added",
-    "change": "Your contact has been changed",
-    "phone": "It's your phone number: ",
-    "show_all": "These are all contacts:",
-    "show_found": "These are found contacts:",
-    "delete": "Item has been deleted",
-    "iter": "These are part of contacts"
-}
-EXIT_COMMANDS = ["good bye", "close", "exit"]
-WARNING_MESSAGES = {
-    "correct_command": "Enter correct command",
-    "name": "Enter user name",
-    "name_phone": "Give me name and phone please",
-    "not_correct_phone": "Not correct phone",
-    "missing_name": "This name is missing in contact book",
-    "contacts_book_empty": "Contacts book is empty yet.",
-    "iter_no_result": "There are no records in this",
-    "show_found_empty": "Search did not return any results.",
-    "not_correct_data": "Not correct data."
-}
 RED = "\033[91m"
 GREEN = "\033[92m"
 BOLD = '\033[1m'
 RESET = "\033[0m"
-
-
-COMMAND_HANDLER_DESCRIPTION = {
-    "hello": "Greeting",
-    "add": "Add new item to address book",
-    "change": "Change item",
-    "phone": "Find phone (item) by Name",
-    "show all": "Show_all items of address book",
-    "iter": "Show parn of items from .. to ... Sintax of command: >>>iter (show count items by defoult); item 1 5",
-    "search": "Search items by name or phone",
-    "delete": "Delete item",
-    "daysbir": "Count days to bithday",
-    "help": "List of commands"
-}
-
 
 def message_notice(notice, color = None):
     color = color or GREEN
@@ -67,9 +29,9 @@ def input_error(func):
             return message_warging(f"Error: {err}")
         except IndexError as err:
             return message_warging(f"Error: {err}")
-        except abl.NotCorrectData as err:
+        except ex.NotCorrectData as err:
             return message_warging(f"Error: {WARNING_MESSAGES['not_correct_data']}")
-        except abl.NotCorrectPhone as err:
+        except ex.NotCorrectPhone as err:
             return message_warging(f"Error: {WARNING_MESSAGES['not_correct_phone']}")
     return wrapper
 
